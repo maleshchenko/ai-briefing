@@ -33,7 +33,7 @@ struct ArticleFetchTool: Tool {
             return Output(content: "")
         }
 
-        return Output(content: String(stripHTML(html).prefix(4000)))
+        return Output(content: String(stripHTML(html).prefix(800)))
     }
 
     private func stripHTML(_ html: String) -> String {

@@ -11,17 +11,30 @@ if #available(macOS 26.0, *) {
     }
 
     let model = SystemLanguageModel.default
-    let prompt = "Summarize the latest news and key developments about the following topic:\n\n\(topic)"
+    let prompt = """
+        Search for recent news about the following topic, fetch the most relevant articles, \
+        and produce a structured briefing:
+
+        \(topic)
+        """
     var guardrailFailed = false
 
     for attempt in 1...3 {
         do {
             let session = LanguageModelSession(
                 model: model,
-                tools: [WebSearchTool()]
+                tools: [WebSearchTool(), ArticleFetchTool()]
             )
-            let response = try await session.respond(to: prompt)
-            print(response.content)
+            let response = try await session.respond(to: prompt, generating: DailyBriefing.self)
+            let briefing = response.content
+            print("Key Developments:")
+            briefing.keyDevelopments.forEach { print("  - \($0)") }
+            print("\nImportant Signals:")
+            briefing.importantSignals.forEach { print("  - \($0)") }
+            print("\nRisks:")
+            briefing.risks.forEach { print("  - \($0)") }
+            print("\nThings to Watch:")
+            briefing.thingsToWatch.forEach { print("  - \($0)") }
             guardrailFailed = false
             break
         } catch LanguageModelSession.GenerationError.guardrailViolation {

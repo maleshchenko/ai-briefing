@@ -53,7 +53,7 @@ struct WebSearchTool: Tool {
             if let range = Range(match.range(at: 1), in: xml) {
                 results.append(String(xml[range]))
             }
-            if results.count >= 5 { break }
+            if results.count >= 3 { break }
         }
 
         return Output(urls: results)

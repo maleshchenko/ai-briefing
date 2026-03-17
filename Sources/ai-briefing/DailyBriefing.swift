@@ -1,6 +1,9 @@
 import Foundation
+import FoundationModels
 
-struct DailyBriefing: Codable {
+@available(macOS 26.0, *)
+@Generable
+struct DailyBriefing {
 
     let keyDevelopments: [String]
     let importantSignals: [String]
