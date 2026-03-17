@@ -10,17 +10,33 @@ if #available(macOS 26.0, *) {
         exit(0)
     }
 
-    do {
-        let model = SystemLanguageModel.default
-        let session = LanguageModelSession(
-            model: model,
-            tools: [WebSearchTool()]
-        )
-        let prompt = "Summarize the latest news and key developments about the following topic:\n\n\(topic)"
-        let response = try await session.respond(to: prompt)
-        print(response.content)
-    } catch {
-        print("Error:", error)
+    let model = SystemLanguageModel.default
+    let prompt = "Summarize the latest news and key developments about the following topic:\n\n\(topic)"
+    var guardrailFailed = false
+
+    for attempt in 1...3 {
+        do {
+            let session = LanguageModelSession(
+                model: model,
+                tools: [WebSearchTool()]
+            )
+            let response = try await session.respond(to: prompt)
+            print(response.content)
+            guardrailFailed = false
+            break
+        } catch LanguageModelSession.GenerationError.guardrailViolation {
+            guardrailFailed = true
+            if attempt < 3 {
+                print("Retrying... (\(attempt)/3)")
+            }
+        } catch {
+            print("Error:", error)
+            break
+        }
+    }
+
+    if guardrailFailed {
+        print("The model declined to generate a response after 3 attempts. The topic or retrieved news content may have triggered content filters.")
     }
 
 } else {
