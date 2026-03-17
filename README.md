@@ -1,6 +1,6 @@
 # ai-briefing
 
-A fully local command-line tool that generates a news summary on any topic using Apple Intelligence (FoundationModels).
+Command-line tool that generates a news summary on any topic using Apple Intelligence (FoundationModels), uses fully local on-device inference
 
 ## System Requirements
 
