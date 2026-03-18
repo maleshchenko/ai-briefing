@@ -13,11 +13,19 @@ let package = Package(
         .executable(
             name: "ai-briefing",
             targets: ["ai-briefing"]
-        )
+        ),
+        .library(
+            name: "BriefingKit",
+            targets: ["BriefingKit"]
+        ),
     ],
     targets: [
+        .target(
+            name: "BriefingKit"
+        ),
         .executableTarget(
-            name: "ai-briefing"
-        )
+            name: "ai-briefing",
+            dependencies: ["BriefingKit"]
+        ),
     ]
 )

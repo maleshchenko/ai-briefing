@@ -2,28 +2,30 @@ import Foundation
 import FoundationModels
 
 @available(macOS 26.0, iOS 26.0, *)
-struct WebSearchTool: Tool {
+public struct WebSearchTool: Tool {
+
+    public init() {}
 
     @Generable
-    struct Arguments {
-        var query: String
+    public struct Arguments {
+        public var query: String
     }
 
-    struct Output: PromptRepresentable {
-        let urls: [String]
+    public struct Output: PromptRepresentable {
+        public let urls: [String]
 
-        var promptRepresentation: Prompt {
+        public var promptRepresentation: Prompt {
             urls.joined(separator: "\n")
         }
     }
 
-    var name: String { "searchWeb" }
+    public var name: String { "searchWeb" }
 
-    var description: String {
+    public var description: String {
         "Search recent news and return article URLs."
     }
 
-    func call(arguments: Arguments) async throws -> Output {
+    public func call(arguments: Arguments) async throws -> Output {
 
         let encoded = arguments.query.addingPercentEncoding(
             withAllowedCharacters: .urlQueryAllowed

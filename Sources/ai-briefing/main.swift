@@ -1,5 +1,8 @@
 import Foundation
-import FoundationModels
+import OSLog
+import BriefingKit
+
+private let logger = Logger(subsystem: "com.ai-briefing", category: "main")
 
 if #available(macOS 26.0, *) {
 
@@ -10,48 +13,23 @@ if #available(macOS 26.0, *) {
         exit(0)
     }
 
-    let model = SystemLanguageModel.default
-    let prompt = """
-        Search for recent news about the following topic and fetch the articles. \
-        For each article, preserve specific details: names, numbers, dates, quotes, and decisions. \
-        Do not generalize or merge articles into vague statements. \
-        Each bullet point should reflect a distinct, concrete fact from a specific source.
-
-        Topic: \(topic)
-        """
-    var guardrailFailed = false
-
-    for attempt in 1...3 {
-        do {
-            let session = LanguageModelSession(
-                model: model,
-                tools: [WebSearchTool(), ArticleFetchTool()]
-            )
-            let response = try await session.respond(to: prompt, generating: DailyBriefing.self)
-            let briefing = response.content
-            print("Key Developments:")
-            briefing.keyDevelopments.forEach { print("  - \($0)") }
-            print("\nImportant Signals:")
-            briefing.importantSignals.forEach { print("  - \($0)") }
-            print("\nRisks:")
-            briefing.risks.forEach { print("  - \($0)") }
-            print("\nThings to Watch:")
-            briefing.thingsToWatch.forEach { print("  - \($0)") }
-            guardrailFailed = false
-            break
-        } catch LanguageModelSession.GenerationError.guardrailViolation {
-            guardrailFailed = true
-            if attempt < 3 {
-                print("Retrying... (\(attempt)/3)")
-            }
-        } catch {
-            print("Error:", error)
-            break
-        }
-    }
-
-    if guardrailFailed {
-        print("The model declined to generate a response after 3 attempts. The topic or retrieved news content may have triggered content filters.")
+    do {
+        let briefing = try await BriefingSession.fetch(topic: topic)
+        print("Key Developments:")
+        briefing.keyDevelopments.forEach { print("  - \($0)") }
+        print("\nImportant Signals:")
+        briefing.importantSignals.forEach { print("  - \($0)") }
+        print("\nRisks:")
+        briefing.risks.forEach { print("  - \($0)") }
+        print("\nThings to Watch:")
+        briefing.thingsToWatch.forEach { print("  - \($0)") }
+    } catch BriefingSession.Error.guardrailViolation {
+        let msg = "The model declined to generate a response after 3 attempts. The topic or retrieved news content may have triggered content filters."
+        logger.error("\(msg)")
+        print(msg)
+    } catch {
+        logger.error("Error: \(error)")
+        print("Error:", error)
     }
 
 } else {

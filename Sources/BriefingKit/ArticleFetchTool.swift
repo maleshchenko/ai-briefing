@@ -2,26 +2,28 @@ import Foundation
 import FoundationModels
 
 @available(macOS 26.0, iOS 26.0, *)
-struct ArticleFetchTool: Tool {
+public struct ArticleFetchTool: Tool {
 
-    let name = "fetchArticle"
+    public init() {}
 
-    let description = "Download and extract readable text from an article URL."
+    public let name = "fetchArticle"
+
+    public let description = "Download and extract readable text from an article URL."
 
     @Generable
-    struct Arguments {
-        var url: String
+    public struct Arguments {
+        public var url: String
     }
 
-    struct Output: PromptRepresentable {
-        let content: String
+    public struct Output: PromptRepresentable {
+        public let content: String
 
-        var promptRepresentation: Prompt {
+        public var promptRepresentation: Prompt {
             content
         }
     }
 
-    func call(arguments: Arguments) async throws -> Output {
+    public func call(arguments: Arguments) async throws -> Output {
 
         guard let url = URL(string: arguments.url) else {
             return Output(content: "")
