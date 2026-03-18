@@ -12,10 +12,12 @@ if #available(macOS 26.0, *) {
 
     let model = SystemLanguageModel.default
     let prompt = """
-        Search for recent news about the following topic, fetch the most relevant articles, \
-        and produce a structured briefing:
+        Search for recent news about the following topic and fetch the articles. \
+        For each article, preserve specific details: names, numbers, dates, quotes, and decisions. \
+        Do not generalize or merge articles into vague statements. \
+        Each bullet point should reflect a distinct, concrete fact from a specific source.
 
-        \(topic)
+        Topic: \(topic)
         """
     var guardrailFailed = false
 
