@@ -1,7 +1,7 @@
 import Foundation
 import FoundationModels
 
-@available(macOS 26.0, *)
+@available(macOS 26.0, iOS 26.0, *)
 @Generable
 struct DailyBriefing {
 

@@ -6,7 +6,8 @@ import PackageDescription
 let package = Package(
     name: "ai-briefing",
     platforms: [
-        .macOS(.v15)
+        .macOS(.v26),
+        .iOS(.v26),
     ],
     products: [
         .executable(
