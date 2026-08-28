@@ -27,5 +27,9 @@ let package = Package(
             name: "ai-briefing",
             dependencies: ["BriefingKit"]
         ),
+        .testTarget(
+            name: "BriefingKitTests",
+            dependencies: ["BriefingKit"]
+        ),
     ]
 )
