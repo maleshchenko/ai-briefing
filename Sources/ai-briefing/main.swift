@@ -103,19 +103,24 @@ if #available(macOS 26.0, *) {
 
         logger.info("Briefing complete — \(briefing.keyDevelopments.count) developments, \(briefing.risks.count) risks")
 
-        let output: String
-        if opts.outputJSON {
-            output = try jsonOutput(for: briefing)
-        } else {
-            output = markdownOutput(for: briefing, topic: opts.topic)
-        }
-
         if let path = opts.outputPath {
+            let output = opts.outputJSON
+                ? try jsonOutput(for: briefing)
+                : markdownOutput(for: briefing, topic: opts.topic)
             try output.write(toFile: path, atomically: true, encoding: .utf8)
             print("Briefing saved to \(path)")
             logger.info("Briefing written to \(path, privacy: .public)")
+        } else if opts.outputJSON {
+            print(try jsonOutput(for: briefing))
         } else {
-            print(output)
+            print("Key Developments:")
+            briefing.keyDevelopments.forEach { print("  - \($0)") }
+            print("\nImportant Signals:")
+            briefing.importantSignals.forEach { print("  - \($0)") }
+            print("\nRisks:")
+            briefing.risks.forEach { print("  - \($0)") }
+            print("\nThings to Watch:")
+            briefing.thingsToWatch.forEach { print("  - \($0)") }
         }
 
     } catch BriefingSession.Error.guardrailViolation {
