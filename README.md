@@ -67,11 +67,31 @@ let briefing = try await BriefingSession.fetch(
     topic: "climate tech",
     articles: 5,
     excerptLength: 1200,
+    urlSession: mySession,          // optional, provide your own for background transfers
     onProgress: { message in print(message) }
 )
 ```
 
-`BriefingSession.fetch` retries up to three times if Apple's content filters reject a generation.
+`BriefingSession.fetch` retries up to three times if Apple's content filters reject a generation. Errors are typed:
+
+```swift
+do {
+    let briefing = try await BriefingSession.fetch(topic: topic)
+} catch BriefingSession.Error.guardrailViolation {
+    // model declined after 3 attempts
+} catch BriefingSession.Error.networkError(let error) {
+    // URLSession failure, check connectivity or entitlements
+}
+```
+
+### iOS entitlement
+
+iOS apps must declare outbound network access in their entitlements file or App Sandbox will silently block the RSS and article requests:
+
+```xml
+<key>com.apple.security.network.client</key>
+<true/>
+```
 
 ## Tests
 
