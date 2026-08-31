@@ -1,10 +1,13 @@
 import Foundation
 import FoundationModels
+import OSLog
 
 @available(macOS 26.0, iOS 26.0, *)
 public struct WebSearchTool: Tool {
 
     public init() {}
+
+    private let logger = Logger(subsystem: "com.ai-briefing", category: "WebSearchTool")
 
     @Generable
     public struct Arguments {
@@ -27,6 +30,8 @@ public struct WebSearchTool: Tool {
 
     public func call(arguments: Arguments) async throws -> Output {
 
+        logger.info("Searching for: \(arguments.query, privacy: .public)")
+
         let encoded = arguments.query.addingPercentEncoding(
             withAllowedCharacters: .urlQueryAllowed
         ) ?? ""
@@ -35,12 +40,17 @@ public struct WebSearchTool: Tool {
             "https://news.google.com/rss/search?q=\(encoded)"
         )!
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(from: url)
+        let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+        logger.debug("RSS feed response: HTTP \(statusCode), \(data.count) bytes")
 
         guard let xml = String(data: data, encoding: .utf8) else {
+            logger.warning("Could not decode RSS response as UTF-8 for query: \(arguments.query, privacy: .public)")
             return Output(urls: [])
         }
 
-        return Output(urls: RSSLinkExtractor.urls(from: xml, maxCount: 3))
+        let urls = RSSLinkExtractor.urls(from: xml, maxCount: 3)
+        logger.info("Found \(urls.count) article URL(s) for query: \(arguments.query, privacy: .public)")
+        return Output(urls: urls)
     }
 }

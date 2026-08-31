@@ -13,8 +13,11 @@ if #available(macOS 26.0, *) {
         exit(0)
     }
 
+    logger.info("Starting briefing for topic: \(topic, privacy: .public)")
+
     do {
         let briefing = try await BriefingSession.fetch(topic: topic)
+        logger.info("Briefing complete — \(briefing.keyDevelopments.count) developments, \(briefing.risks.count) risks")
         print("Key Developments:")
         briefing.keyDevelopments.forEach { print("  - \($0)") }
         print("\nImportant Signals:")
