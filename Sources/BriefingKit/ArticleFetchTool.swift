@@ -5,9 +5,21 @@ import OSLog
 @available(macOS 26.0, iOS 26.0, *)
 public struct ArticleFetchTool: Tool {
 
-    public init() {}
+    public init(excerptLength: Int = 800, onProgress: (@Sendable (String) -> Void)? = nil) {
+        self.excerptLength = excerptLength
+        self.onProgress = onProgress
+    }
 
     private let logger = Logger(subsystem: "com.ai-briefing", category: "ArticleFetchTool")
+    private let excerptLength: Int
+    private let onProgress: (@Sendable (String) -> Void)?
+
+    private static let urlSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        return URLSession(configuration: config)
+    }()
 
     public let name = "fetchArticle"
 
@@ -29,22 +41,28 @@ public struct ArticleFetchTool: Tool {
     public func call(arguments: Arguments) async throws -> Output {
 
         logger.info("Fetching article: \(arguments.url, privacy: .public)")
+        onProgress?("Fetching article: \(arguments.url)")
 
         guard let url = URL(string: arguments.url) else {
             logger.warning("Invalid URL: \(arguments.url, privacy: .public)")
-            return Output(content: "")
+            return Output(content: "[Invalid URL]")
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await Self.urlSession.data(from: url)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         logger.debug("Article response: HTTP \(statusCode), \(data.count) bytes from \(url.host() ?? "unknown", privacy: .public)")
 
-        guard let html = String(data: data, encoding: .utf8) else {
-            logger.warning("Could not decode response as UTF-8 for URL: \(arguments.url, privacy: .public)")
-            return Output(content: "")
+        guard statusCode == 200 || statusCode == 0 else {
+            logger.warning("HTTP \(statusCode) for URL: \(arguments.url, privacy: .public)")
+            return Output(content: "[HTTP \(statusCode): fetch failed]")
         }
 
-        let excerpt = HTMLStripper.excerpt(html, maxLength: 800)
+        guard let html = String(data: data, encoding: .utf8) else {
+            logger.warning("Could not decode response as UTF-8 for URL: \(arguments.url, privacy: .public)")
+            return Output(content: "[Could not decode article content]")
+        }
+
+        let excerpt = HTMLStripper.excerpt(html, maxLength: excerptLength)
         logger.info("Extracted \(excerpt.count) characters from article at \(url.host() ?? "unknown", privacy: .public)")
         return Output(content: excerpt)
     }

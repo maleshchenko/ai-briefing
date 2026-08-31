@@ -5,9 +5,21 @@ import OSLog
 @available(macOS 26.0, iOS 26.0, *)
 public struct WebSearchTool: Tool {
 
-    public init() {}
+    public init(maxArticles: Int = 3, onProgress: (@Sendable (String) -> Void)? = nil) {
+        self.maxArticles = maxArticles
+        self.onProgress = onProgress
+    }
 
     private let logger = Logger(subsystem: "com.ai-briefing", category: "WebSearchTool")
+    private let maxArticles: Int
+    private let onProgress: (@Sendable (String) -> Void)?
+
+    private static let urlSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        return URLSession(configuration: config)
+    }()
 
     @Generable
     public struct Arguments {
@@ -31,25 +43,29 @@ public struct WebSearchTool: Tool {
     public func call(arguments: Arguments) async throws -> Output {
 
         logger.info("Searching for: \(arguments.query, privacy: .public)")
+        onProgress?("Searching: \(arguments.query)")
 
         let encoded = arguments.query.addingPercentEncoding(
             withAllowedCharacters: .urlQueryAllowed
         ) ?? ""
 
-        let url = URL(string:
-            "https://news.google.com/rss/search?q=\(encoded)"
-        )!
+        let url = URL(string: "https://news.google.com/rss/search?q=\(encoded)")!
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await Self.urlSession.data(from: url)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         logger.debug("RSS feed response: HTTP \(statusCode), \(data.count) bytes")
+
+        guard statusCode == 200 || statusCode == 0 else {
+            logger.warning("HTTP \(statusCode) fetching RSS for query: \(arguments.query, privacy: .public)")
+            return Output(urls: [])
+        }
 
         guard let xml = String(data: data, encoding: .utf8) else {
             logger.warning("Could not decode RSS response as UTF-8 for query: \(arguments.query, privacy: .public)")
             return Output(urls: [])
         }
 
-        let urls = RSSLinkExtractor.urls(from: xml, maxCount: 3)
+        let urls = RSSLinkExtractor.urls(from: xml, maxCount: maxArticles)
         logger.info("Found \(urls.count) article URL(s) for query: \(arguments.query, privacy: .public)")
         return Output(urls: urls)
     }

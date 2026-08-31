@@ -12,7 +12,12 @@ public struct BriefingSession {
     private static let logger = Logger(subsystem: "com.ai-briefing", category: "BriefingSession")
     private static let maxAttempts = 3
 
-    public static func fetch(topic: String) async throws -> DailyBriefing {
+    public static func fetch(
+        topic: String,
+        articles: Int = 3,
+        excerptLength: Int = 800,
+        onProgress: (@Sendable (String) -> Void)? = nil
+    ) async throws -> DailyBriefing {
 
         logger.info("Fetching briefing for topic: \(topic, privacy: .public)")
 
@@ -28,10 +33,14 @@ public struct BriefingSession {
 
         for attempt in 1...maxAttempts {
             logger.debug("Generation attempt \(attempt)/\(maxAttempts)")
+            onProgress?("Generating briefing (attempt \(attempt)/\(maxAttempts))…")
             do {
                 let session = LanguageModelSession(
                     model: model,
-                    tools: [WebSearchTool(), ArticleFetchTool()]
+                    tools: [
+                        WebSearchTool(maxArticles: articles, onProgress: onProgress),
+                        ArticleFetchTool(excerptLength: excerptLength, onProgress: onProgress),
+                    ]
                 )
                 let response = try await session.respond(to: prompt, generating: DailyBriefing.self)
                 logger.info("Briefing generated successfully on attempt \(attempt)")
