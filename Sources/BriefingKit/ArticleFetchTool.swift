@@ -5,21 +5,20 @@ import OSLog
 @available(macOS 26.0, iOS 26.0, *)
 public struct ArticleFetchTool: Tool {
 
-    public init(excerptLength: Int = 800, onProgress: (@Sendable (String) -> Void)? = nil) {
+    public init(
+        excerptLength: Int = 800,
+        urlSession: URLSession = .shared,
+        onProgress: (@Sendable (String) -> Void)? = nil
+    ) {
         self.excerptLength = excerptLength
+        self.urlSession = urlSession
         self.onProgress = onProgress
     }
 
     private let logger = Logger(subsystem: "com.ai-briefing", category: "ArticleFetchTool")
     private let excerptLength: Int
+    private let urlSession: URLSession
     private let onProgress: (@Sendable (String) -> Void)?
-
-    private static let urlSession: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 10
-        config.timeoutIntervalForResource = 30
-        return URLSession(configuration: config)
-    }()
 
     public let name = "fetchArticle"
 
@@ -48,7 +47,7 @@ public struct ArticleFetchTool: Tool {
             return Output(content: "[Invalid URL]")
         }
 
-        let (data, response) = try await Self.urlSession.data(from: url)
+        let (data, response) = try await urlSession.data(from: url)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         logger.debug("Article response: HTTP \(statusCode), \(data.count) bytes from \(url.host() ?? "unknown", privacy: .public)")
 

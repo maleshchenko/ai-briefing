@@ -5,21 +5,20 @@ import OSLog
 @available(macOS 26.0, iOS 26.0, *)
 public struct WebSearchTool: Tool {
 
-    public init(maxArticles: Int = 3, onProgress: (@Sendable (String) -> Void)? = nil) {
+    public init(
+        maxArticles: Int = 3,
+        urlSession: URLSession = .shared,
+        onProgress: (@Sendable (String) -> Void)? = nil
+    ) {
         self.maxArticles = maxArticles
+        self.urlSession = urlSession
         self.onProgress = onProgress
     }
 
     private let logger = Logger(subsystem: "com.ai-briefing", category: "WebSearchTool")
     private let maxArticles: Int
+    private let urlSession: URLSession
     private let onProgress: (@Sendable (String) -> Void)?
-
-    private static let urlSession: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 10
-        config.timeoutIntervalForResource = 30
-        return URLSession(configuration: config)
-    }()
 
     @Generable
     public struct Arguments {
@@ -51,7 +50,7 @@ public struct WebSearchTool: Tool {
 
         let url = URL(string: "https://news.google.com/rss/search?q=\(encoded)")!
 
-        let (data, response) = try await Self.urlSession.data(from: url)
+        let (data, response) = try await urlSession.data(from: url)
         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
         logger.debug("RSS feed response: HTTP \(statusCode), \(data.count) bytes")
 

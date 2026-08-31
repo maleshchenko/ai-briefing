@@ -7,20 +7,31 @@ public struct BriefingSession {
 
     public enum Error: Swift.Error {
         case guardrailViolation
+        case networkError(Swift.Error)
     }
 
     private static let logger = Logger(subsystem: "com.ai-briefing", category: "BriefingSession")
     private static let maxAttempts = 3
 
+    /// Default session shared across calls when no custom session is provided.
+    private static let defaultURLSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 30
+        return URLSession(configuration: config)
+    }()
+
     public static func fetch(
         topic: String,
         articles: Int = 3,
         excerptLength: Int = 800,
+        urlSession: URLSession? = nil,
         onProgress: (@Sendable (String) -> Void)? = nil
     ) async throws -> DailyBriefing {
 
         logger.info("Fetching briefing for topic: \(topic, privacy: .public)")
 
+        let session = urlSession ?? defaultURLSession
         let model = SystemLanguageModel.default
         let prompt = """
             Search for recent news about the following topic and fetch the articles. \
@@ -35,14 +46,14 @@ public struct BriefingSession {
             logger.debug("Generation attempt \(attempt)/\(maxAttempts)")
             onProgress?("Generating briefing (attempt \(attempt)/\(maxAttempts))…")
             do {
-                let session = LanguageModelSession(
+                let modelSession = LanguageModelSession(
                     model: model,
                     tools: [
-                        WebSearchTool(maxArticles: articles, onProgress: onProgress),
-                        ArticleFetchTool(excerptLength: excerptLength, onProgress: onProgress),
+                        WebSearchTool(maxArticles: articles, urlSession: session, onProgress: onProgress),
+                        ArticleFetchTool(excerptLength: excerptLength, urlSession: session, onProgress: onProgress),
                     ]
                 )
-                let response = try await session.respond(to: prompt, generating: DailyBriefing.self)
+                let response = try await modelSession.respond(to: prompt, generating: DailyBriefing.self)
                 logger.info("Briefing generated successfully on attempt \(attempt)")
                 return response.content
             } catch LanguageModelSession.GenerationError.guardrailViolation {
@@ -51,6 +62,9 @@ public struct BriefingSession {
                     logger.error("All \(maxAttempts) attempts hit guardrail violation — giving up")
                     throw Error.guardrailViolation
                 }
+            } catch let urlError as URLError {
+                logger.error("Network error: \(urlError.localizedDescription)")
+                throw Error.networkError(urlError)
             }
         }
 

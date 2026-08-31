@@ -127,6 +127,10 @@ if #available(macOS 26.0, *) {
         let msg = "The model declined to generate a response after 3 attempts. The topic or retrieved news content may have triggered content filters."
         logger.error("\(msg)")
         print(msg)
+    } catch BriefingSession.Error.networkError(let underlying) {
+        let msg = "Network error: \(underlying.localizedDescription)"
+        logger.error("\(msg)")
+        print(msg)
     } catch {
         logger.error("Error: \(error)")
         print("Error:", error)
