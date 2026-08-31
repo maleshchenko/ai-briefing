@@ -11,6 +11,8 @@ The package ships two products:
 - **`ai-briefing`** — command-line tool
 - **`BriefingKit`** — Swift library for macOS and iOS apps
 
+A similar project, on-devie Apple Intelligence chat with web search functionality: https://github.com/maleshchenko/Apple-Intelligence-Chat
+
 ## Requirements
 
 - macOS 26.0 or iOS 26.0
