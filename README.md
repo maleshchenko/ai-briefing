@@ -47,11 +47,11 @@ Progress is printed to stderr so stdout stays clean for piping and redirection.
 
 ## Example output
 
-<img width="848" height="485" alt="Screenshot of a CLI briefing" src="https://github.com/user-attachments/assets/ca195718-e989-443b-b52b-69c4b57c887a" />
+<img width="1726" height="581" alt="Screenshot 2026-08-31 at 9 04 08 AM" src="https://github.com/user-attachments/assets/736ff7e8-9d4a-40cc-a87d-945f77a29ecf" />
 
 ## Library (iOS / macOS)
 
-Add the package in Xcode (File → Add Package Dependencies) and link **BriefingKit**.
+Add the package in Xcode (File -> Add Package Dependencies) and link **BriefingKit**.
 
 ```swift
 import BriefingKit
